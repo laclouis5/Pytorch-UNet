@@ -6,6 +6,8 @@ import PIL
 import random
 import numbers
 
+# MARK: - Main classes
+
 class UNetDataAugmentations:
     def __init__(self):
         self.transform = Compose([
@@ -105,7 +107,6 @@ class Crop:
     def call(self, image, mask):
         return crop(image, mask, self.top, self.left, self.height, self.width)
 
-# Can add scale
 class RandomCrop:
     """
     ```size`` is a (width, height) tuple.
@@ -143,7 +144,6 @@ class RandomCrop:
             else:
                 (y, x) = random.choice(indices)
 
-
         else:
             x_max = img_w - self.width
             y_max = img_h - self.height
@@ -172,16 +172,20 @@ class Normalize:
 
         return im_array, mask_array
 
+# MARK: - Function helpers
+
 def crop(image, mask, top, left, height, width):
     return (
         F.crop(image, top, left, height, width),
         F.crop(mask, top, left, height, width))
 
+# MARK: - Tests
+
 def main():
     import matplotlib.pyplot as plt
 
-    image = PIL.Image.open("imgs/grape29.png")
-    mask = PIL.Image.open("masks/grape29.png")
+    image = PIL.Image.open("../data/grapes/imgs/grape29.png")
+    mask = PIL.Image.open("../data/grapes/masks/grape29.png")
 
     transform = Compose([
         RandomHorizontalFlip(),

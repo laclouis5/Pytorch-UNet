@@ -44,17 +44,16 @@ def train_net(net,
     writer = SummaryWriter(comment=f"LR_{lr}_BS_{batch_size}_SCALE_{img_scale}")
     global_step = 0
 
-    logging.info(f"""
-        Starting training:
-            Epochs:          {epochs}
-            Batch size:      {batch_size}
-            Learning rate:   {lr}
-            Training size:   {n_train}
-            Validation size: {n_val}
-            Checkpoints:     {save_cp}
-            Device:          {device.type}
-            Images scaling:  {img_scale}
-        """)
+    logging.info(
+        "Starting training:\n"
+        f"\tEpochs:          {epochs}\n"
+        f"\tBatch size:      {batch_size}\n"
+        f"\tLearning rate:   {lr}\n"
+        f"\tTraining size:   {n_train}\n"
+        f"\tValidation size: {n_val}\n"
+        f"\tCheckpoints:     {save_cp}\n"
+        f"\tDevice:          {device.type}\n"
+        f"\tImages scaling:  {img_scale}")
 
     criterion = nn.CrossEntropyLoss() if net.n_classes > 1 else nn.BCEWithLogitsLoss()
     optimizer = optim.RMSprop(net.parameters(), lr=lr, weight_decay=1e-8, momentum=0.9)
@@ -164,7 +163,7 @@ if __name__ == "__main__":
     logging.info(f"Network:\n"
                  f"\t{net.n_channels} input channels\n"
                  f"\t{net.n_classes} output channels (classes)\n"
-                 f"\t{"Bilinear" if net.bilinear else "Transposed conv"} upscaling")
+                 f"\t{'Bilinear' if net.bilinear else 'Transposed conv'} upscaling")
 
     if args.load:
         net.load_state_dict(
