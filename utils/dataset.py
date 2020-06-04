@@ -7,12 +7,12 @@ from torch.utils.data import Dataset
 import logging
 from PIL import Image
 
-
 class BasicDataset(Dataset):
     def __init__(self, imgs_dir, masks_dir, scale=1):
         self.imgs_dir = imgs_dir
         self.masks_dir = masks_dir
         self.scale = scale
+
         assert 0 < scale <= 1, 'Scale must be between 0 and 1'
 
         self.ids = [splitext(file)[0] for file in listdir(imgs_dir)
