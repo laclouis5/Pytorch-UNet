@@ -4,7 +4,6 @@ from tqdm import tqdm
 
 from dice_loss import dice_coeff
 
-
 def eval_net(net, loader, device):
     """Evaluation without the densecrf with the dice coefficient"""
     net.eval()

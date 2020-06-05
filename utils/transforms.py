@@ -11,11 +11,12 @@ import numbers
 class UNetDataAugmentations:
     def __init__(self, scale=None):
         self.transform = Compose([
-            # RandomCrop(size=(800, 800), pos_ratio=1),
-            Rescale(scale) if scale else Identity(),
+            Resize((480, 320)) if scale else Identity(),
             RandomHorizontalFlip(),
             RandomColorJitter(),
-            ToTensor(),
+            ToNumpyArray(),
+            Normalize(),
+            ToTensor()
         ])
 
     def __call__(self, image, mask):
@@ -24,8 +25,10 @@ class UNetDataAugmentations:
 class UNetBaseTransform:
     def __init__(self, scale=None):
         self.transform = Compose([
-            Rescale(scale) if scale else Identity(),
-            ToTensor(),
+            Resize((480, 320)) if scale else Identity(),
+            ToNumpyArray(),
+            Normalize(),
+            ToTensor()
         ])
 
     def __call__(self, image, mask):
@@ -54,6 +57,14 @@ class Optional:
             return self.transform(image, mask)
         else:
             return (image, mask)
+
+class Lambda:
+    def __init__(self, lambda_image, lambda_mask):
+        self.l1 = lambda_image
+        self.l2 = lambda_mask
+
+    def __call__(self, image, mask):
+        return l1(image), l2(mask)
 
 class RandomHorizontalFlip:
     def __init__(self, p=0.5):
@@ -110,12 +121,8 @@ class RandomColorJitter:
         return self.transform(image), mask
 
 class ToTensor:
-    """
-    Take a PIL image in HWC format and returns a Tensor with values in
-    0...1 in CHW format.
-    """
     def __call__(self, image, mask):
-        return F.to_tensor(image), F.to_tensor(mask)
+        return torch.from_numpy(image).type(torch.FloatTensor), torch.from_numpy(mask).type(torch.FloatTensor)
 
 class Crop:
     def __init__(self, top, left, height, width):
@@ -177,21 +184,21 @@ class ToNumpyArray:
     def __call__(self, image, mask):
         return np.array(image), np.array(mask)
 
-# class Normalize:
-#     def __call__(self, im_array, mask_array):
-#         if len(mask_array.shape) == 2:
-#             mask_array = torch.unsqueeze(mask_array, 2)
-#
-#         # HWC to CHW
-#         mask_array.transpose((2, 0, 1))
-#         im_array.transpose((2, 0, 1))
-#
-#         if im_array.max() > 1:
-#             im_array = im_array / 255
-#         if mask_array.max() > 1:
-#             mask_array = mask_array / 255
-#
-#         return im_array, mask_array
+class Normalize:
+    #Can add normalisation from imagenet (mean, std, ...)
+    def __call__(self, image, mask):
+        if len(mask.shape) == 2:
+            mask = np.expand_dims(mask, 2)
+
+        if image.max() > 1:
+            image = image / 255
+        if mask.max() > 1:
+            mask = mask / 255
+
+        image = image.transpose((2, 0, 1))
+        mask = mask.transpose((2, 0, 1))
+
+        return image, mask
 
 # MARK: - Function helpers
 
