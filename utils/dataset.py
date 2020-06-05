@@ -6,6 +6,7 @@ import torch
 from torch.utils.data import Dataset
 import logging
 from PIL import Image
+from .transforms import UNetDataAugmentations, UNetValidationTransform
 
 class BasicDataset(Dataset):
     def __init__(self, imgs_dir, masks_dir, scale=1):
@@ -14,6 +15,7 @@ class BasicDataset(Dataset):
         self.imgs_dir = imgs_dir
         self.masks_dir = masks_dir
         self.scale = scale
+        self.transform = None
 
         self.ids = [splitext(file)[0] for file in listdir(imgs_dir)
                     if not file.startswith(".")]
@@ -58,5 +60,9 @@ class BasicDataset(Dataset):
 
         img = self.preprocess(img, self.scale)
         mask = self.preprocess(mask, self.scale)
+
+        if self.transform is not None:
+            (img, mask) = self.transform(img, mask)
+            return {"image": img, "mask": mask}
 
         return {"image": torch.from_numpy(img), "mask": torch.from_numpy(mask)}

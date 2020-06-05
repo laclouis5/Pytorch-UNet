@@ -26,6 +26,9 @@ class UNetValidationTransform:
             ToTensor()
         ])
 
+    def __call__(self, image, mask):
+        return self.transform(image, mask)
+
 class Compose:
     def __init__(self, transforms):
         self.transforms = transforms

@@ -35,6 +35,8 @@ def train_net(net,
     n_train = len(dataset) - n_val
 
     (train, val) = random_split(dataset, [n_train, n_val])
+    train.transform = UNetDataAugmentations()
+    val.transform = UNetValidationTransform()
 
     train_loader = DataLoader(train,
         batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
