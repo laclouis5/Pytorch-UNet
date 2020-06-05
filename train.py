@@ -16,6 +16,8 @@ from torch.utils.tensorboard import SummaryWriter
 from utils.dataset import BasicDataset
 from torch.utils.data import DataLoader, random_split
 
+from utils.transforms import UNetDataAugmentations, UNetBaseTransform
+
 dir_img = "data/imgs/"
 dir_mask = "data/masks/"
 dir_checkpoint = "checkpoints/"
@@ -35,8 +37,7 @@ def train_net(net,
     n_train = len(dataset) - n_val
 
     (train, val) = random_split(dataset, [n_train, n_val])
-    train.transform = UNetDataAugmentations()
-    val.transform = UNetValidationTransform()
+    train.transform = UNetDataAugmentations(img_scale)
 
     train_loader = DataLoader(train,
         batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)

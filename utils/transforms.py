@@ -9,9 +9,10 @@ import numbers
 # MARK: - Main classes
 
 class UNetDataAugmentations:
-    def __init__(self):
+    def __init__(self, scale=None):
         self.transform = Compose([
             # RandomCrop(size=(800, 800), pos_ratio=1),
+            Rescale(scale) if scale else Identity(),
             RandomHorizontalFlip(),
             RandomColorJitter(),
             ToTensor(),
@@ -20,10 +21,11 @@ class UNetDataAugmentations:
     def __call__(self, image, mask):
         return self.transform(image, mask)
 
-class UNetValidationTransform:
-    def __init__(self):
+class UNetBaseTransform:
+    def __init__(self, scale=None):
         self.transform = Compose([
-            ToTensor()
+            Rescale(scale) if scale else Identity(),
+            ToTensor(),
         ])
 
     def __call__(self, image, mask):
@@ -37,6 +39,21 @@ class Compose:
         for t in self.transforms:
             (image, mask) = t(image, mask)
         return image, mask
+
+class Identity:
+    def __call__(self, image, mask):
+        return (image, mask)
+
+class Optional:
+    def __init__(self, transform, condition):
+        self.transform = transform
+        self.condition = condition
+
+    def __call__(self, image, mask):
+        if self.condition:
+            return self.transform(image, mask)
+        else:
+            return (image, mask)
 
 class RandomHorizontalFlip:
     def __init__(self, p=0.5):
@@ -68,16 +85,16 @@ class Resize:
 
 class Rescale:
     def __init__(self, scale):
-        assert 0 < scale <= 1, "'scale' must be in ]0, 1]"
+        assert 0 < scale <= 1, "'scale' must be in 0<..1"
 
         self.scale = scale
 
     def __call__(self, image, mask):
         (img_w, img_h) = image.size
-        size = (int(img_w * scale), int(img_h * scale))
+        (w, h) = (int(img_w * self.scale), int(img_h  * self.scale))
 
-        image_out = F.resize(image, size)
-        mask_out = F.resize(mask, size, interpolation=PIL.Image.NEAREST)
+        image_out = F.resize(image, (h, w))
+        mask_out = F.resize(mask, (h, w), interpolation=PIL.Image.NEAREST)
 
         return image_out, mask_out
 
@@ -160,20 +177,21 @@ class ToNumpyArray:
     def __call__(self, image, mask):
         return np.array(image), np.array(mask)
 
-class Normalize:
-    def __call__(self, im_array, mask_array):
-        mask_array = np.expand_dims(mask_array, axis=2)
-
-        # HWC to CHW
-        mask_array.transpose((2, 0, 1))
-        im_array.transpose((2, 0, 1))
-
-        if im_array.max() > 1:
-            im_array = im_array / 255
-        if mask_array.max() > 1:
-            mask_array = mask_array / 255
-
-        return im_array, mask_array
+# class Normalize:
+#     def __call__(self, im_array, mask_array):
+#         if len(mask_array.shape) == 2:
+#             mask_array = torch.unsqueeze(mask_array, 2)
+#
+#         # HWC to CHW
+#         mask_array.transpose((2, 0, 1))
+#         im_array.transpose((2, 0, 1))
+#
+#         if im_array.max() > 1:
+#             im_array = im_array / 255
+#         if mask_array.max() > 1:
+#             mask_array = mask_array / 255
+#
+#         return im_array, mask_array
 
 # MARK: - Function helpers
 
@@ -187,13 +205,13 @@ def crop(image, mask, top, left, height, width):
 def main():
     import matplotlib.pyplot as plt
 
-    image = PIL.Image.open("../data/grapes/imgs/grape29.png")
-    mask = PIL.Image.open("../data/grapes/masks/grape29.png")
+    image = PIL.Image.open("../data/imgs/grape29.png")
+    mask = PIL.Image.open("../data/masks/grape29.png")
 
     transform = Compose([
         RandomHorizontalFlip(),
         # RandomCrop(size=(612, 412), pos_ratio=0.5),
-        Rescale(0.33)  # Test this
+        Rescale(0.01) if False else Identity(),
         RandomColorJitter(),
         ToTensor()
     ])
