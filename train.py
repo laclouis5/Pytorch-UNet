@@ -17,6 +17,7 @@ from utils.dataset import BasicDataset
 from torch.utils.data import DataLoader, random_split
 
 from utils.transforms import UNetDataAugmentations, UNetBaseTransform
+import segmentation_models_pytorch as smp
 
 dir_img = "data/imgs/"
 dir_mask = "data/masks/"
@@ -42,7 +43,7 @@ def train_net(net,
     train_loader = DataLoader(train,
         batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
     val_loader = DataLoader(val,
-        batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True, drop_last=True)
+        batch_size=1, shuffle=False, num_workers=8, pin_memory=True)
 
     writer = SummaryWriter(comment=f"LR_{lr}_BS_{batch_size}_SCALE_{img_scale}")
     global_step = 0
@@ -60,8 +61,9 @@ def train_net(net,
 
     criterion = nn.CrossEntropyLoss() if net.n_classes > 1 else nn.BCEWithLogitsLoss()
     optimizer = optim.RMSprop(net.parameters(), lr=lr, weight_decay=1e-8, momentum=0.9)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-        "min" if net.n_classes > 1 else "max", patience=2)
+    # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+    #     "min" if net.n_classes > 1 else "max", patience=2)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=int(epochs/4))
 
     for epoch in range(epochs):
         net.train()
@@ -95,7 +97,7 @@ def train_net(net,
                 pbar.update(imgs.shape[0])
 
                 global_step += 1
-                if global_step % (len(dataset) // (10 * batch_size)) == 0:
+                if global_step % (len(train) // (10 * batch_size)) == 0:
                     for tag, value in net.named_parameters():
                         tag = tag.replace(".", "/")
 
@@ -103,7 +105,7 @@ def train_net(net,
                         writer.add_histogram("grads/" + tag, value.grad.data.cpu().numpy(), global_step)
 
                     val_score = eval_net(net, val_loader, device)
-                    scheduler.step(val_score)
+                    # scheduler.step(val_score)
 
                     writer.add_scalar("learning_rate", optimizer.param_groups[0]["lr"], global_step)
 
@@ -119,6 +121,9 @@ def train_net(net,
                     if net.n_classes == 1:
                         writer.add_images("masks/true", true_masks, global_step)
                         writer.add_images("masks/pred", torch.sigmoid(masks_pred) > 0.5, global_step)
+
+        # LRStep Scheduler
+        scheduler.step()
 
         if save_cp:
             try:
@@ -162,7 +167,12 @@ if __name__ == "__main__":
     #   - For 1 class and background, use n_classes=1
     #   - For 2 classes, use n_classes=1
     #   - For N > 2 classes, use n_classes=N
-    net = UNet(n_channels=3, n_classes=1, bilinear=True)
+    # net = UNet(n_channels=3, n_classes=1, bilinear=True)
+    net = smp.Unet("resnet18")
+    setattr(net, "n_classes", 1)
+    setattr(net, "n_channels", 3)
+    setattr(net, "bilinear", None)
+
     logging.info(f"Network:\n"
                  f"\t{net.n_channels} input channels\n"
                  f"\t{net.n_classes} output channels (classes)\n"
