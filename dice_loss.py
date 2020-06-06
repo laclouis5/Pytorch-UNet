@@ -36,7 +36,16 @@ def dice_coeff(input, target):
     else:
         s = torch.FloatTensor(1).zero_()
 
-    for i, c in enumerate(zip(input, target)):
-        s = s + DiceCoeff().forward(c[0], c[1])
+    if len(input) == 0:
+        return s
 
-    return s / (i + 1)
+    for i, t in zip(input, target):
+        s += DiceCoeff().forward(i, t)
+
+    return s / len(input)
+
+# Remove / 0
+# Remove the enumerate nasty hack
+# Look at the SMP implementation
+# Try to remove the for loop to //ize
+# Try to process batches (but avoid the mean problem)
