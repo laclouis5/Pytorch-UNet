@@ -65,6 +65,8 @@ def train_net(net,
     #     "min" if net.n_classes > 1 else "max", patience=2)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=int(epochs/4))
 
+    best_model_dice_coeff = 0.0
+
     for epoch in range(epochs):
         net.train()
 
@@ -106,6 +108,11 @@ def train_net(net,
 
                     val_score = eval_net(net, val_loader, device)
                     # scheduler.step(val_score)
+
+                    if val_score > best_model_dice_coeff:
+                        best_model_dice_coeff = val_score
+                        torch.save(net.state_dict(),
+                            dir_checkpoint + f'CP_best.pth')
 
                     writer.add_scalar("learning_rate", optimizer.param_groups[0]["lr"], global_step)
 
