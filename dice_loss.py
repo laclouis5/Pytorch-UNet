@@ -37,7 +37,7 @@ def dice_coeff(input, target):
     # for (i, t) in zip(input, target):
     #     s += DiceCoeff().forward(i, t)
     #
-    # s / len(input)  # Or: s.mean()
+    # s / len(input)
 
     for i, c in enumerate(zip(input, target)):
         s = s + DiceCoeff().forward(c[0], c[1])

@@ -12,6 +12,8 @@ from unet import UNet
 from utils.data_vis import plot_img_and_mask
 from utils.dataset import BasicDataset
 
+from utils.transforms import UNetDataAugmentations, UNetBaseTransform
+import segmentation_models_pytorch as smp
 
 def predict_img(net,
                 full_img,
@@ -35,13 +37,11 @@ def predict_img(net,
 
         probs = probs.squeeze(0)
 
-        tf = transforms.Compose(
-            [
-                transforms.ToPILImage(),
-                transforms.Resize(full_img.size[1]),
-                transforms.ToTensor()
-            ]
-        )
+        tf = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.Resize(full_img.size[1]),
+            transforms.ToTensor()
+        ])
 
         probs = tf(probs.cpu())
         full_mask = probs.squeeze().cpu().numpy()
@@ -50,8 +50,9 @@ def predict_img(net,
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description='Predict masks from input images',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description='Predict masks from input images',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--model', '-m', default='MODEL.pth',
                         metavar='FILE',
                         help="Specify the file in which the model is stored")

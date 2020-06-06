@@ -63,7 +63,7 @@ def train_net(net,
     optimizer = optim.RMSprop(net.parameters(), lr=lr, weight_decay=1e-8, momentum=0.9)
     # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
     #     "min" if net.n_classes > 1 else "max", patience=2)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=int(epochs/4))
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=int(epochs/5))
 
     best_model_dice_coeff = 0.0
 
@@ -99,12 +99,12 @@ def train_net(net,
                 pbar.update(imgs.shape[0])
 
                 global_step += 1
-                if global_step % (len(train) // (10 * batch_size)) == 0:
-                    for tag, value in net.named_parameters():
-                        tag = tag.replace(".", "/")
+                if global_step % (len(train) // (5 * batch_size)) == 0:
+                    # for tag, value in net.named_parameters():
+                        # tag = tag.replace(".", "/")
 
-                        writer.add_histogram("weights/" + tag, value.data.cpu().numpy(), global_step)
-                        writer.add_histogram("grads/" + tag, value.grad.data.cpu().numpy(), global_step)
+                        # writer.add_histogram("weights/" + tag, value.data.cpu().numpy(), global_step)
+                        # writer.add_histogram("grads/" + tag, value.grad.data.cpu().numpy(), global_step)
 
                     val_score = eval_net(net, val_loader, device)
                     # scheduler.step(val_score)
@@ -151,7 +151,7 @@ def get_args():
         help="Number of epochs", dest="epochs")
     parser.add_argument("-b", "--batch-size", metavar="B", type=int, nargs="?", default=1,
         help="Batch size", dest="batchsize")
-    parser.add_argument("-l", "--learning-rate", metavar="LR", type=float, nargs="?", default=0.1,
+    parser.add_argument("-l", "--learning-rate", metavar="LR", type=float, nargs="?", default=0.01,
         help="Learning rate", dest="lr")
     parser.add_argument("-f", "--load", dest="load", type=str, default=False,
         help="Load model from a .pth file")
