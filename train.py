@@ -58,6 +58,7 @@ def train_net(net,
     else:
         criterion = nn.BCEWithLogitsLoss()
 
+    best_model_dice_coeff = 0.0
     for epoch in range(epochs):
         net.train()
 
@@ -97,6 +98,11 @@ def train_net(net,
                     val_score = eval_net(net, val_loader, device)
                     scheduler.step(val_score)
                     writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step)
+
+                    if val_score > best_model_dice_coeff:
+                        best_model_dice_coeff = val_score
+                        torch.save(net.state_dict(),
+                            dir_checkpoint + f'CP_best.pth')
 
                     if net.n_classes > 1:
                         logging.info('Validation cross entropy: {}'.format(val_score))
