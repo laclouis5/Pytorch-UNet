@@ -13,14 +13,12 @@ from eval import eval_net
 from unet import UNet
 
 from torch.utils.tensorboard import SummaryWriter
-from utils.dataset import BasicDataset
+from utils.dataset import BasicDataset, CustomDataset
 from torch.utils.data import DataLoader, random_split
 
 from utils.transforms import UNetDataAugmentations, UNetBaseTransform
 import segmentation_models_pytorch as smp
 
-dir_img = "data/imgs/"
-dir_mask = "data/masks/"
 dir_checkpoint = "checkpoints/"
 
 def train_net(net,
@@ -32,13 +30,15 @@ def train_net(net,
     save_cp=True,
     img_scale=0.5
 ):
-    dataset = BasicDataset(dir_img, dir_mask, img_scale)
-
-    n_val = int(len(dataset) * val_percent)
-    n_train = len(dataset) - n_val
-
-    (train, val) = random_split(dataset, [n_train, n_val])
-    train.transform = UNetDataAugmentations(img_scale)
+    # dataset = BasicDataset(dir_img, dir_mask, img_scale)
+    # n_val = int(len(dataset) * val_percent)
+    # n_train = len(dataset) - n_val
+    # (train, val) = random_split(dataset, [n_train, n_val])
+    # train.transform = UNetDataAugmentations(img_scale)
+    train = CustomDataset("data/train/images/", "data/train/masks/",
+        transform=UNetDataAugmentations())
+    val = CustomDataset("data/val/images/", "data/val/masks/",
+        transform=UNetBaseTransform())
 
     train_loader = DataLoader(train,
         batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
@@ -53,8 +53,8 @@ def train_net(net,
         f"\tEpochs:          {epochs}\n"
         f"\tBatch size:      {batch_size}\n"
         f"\tLearning rate:   {lr}\n"
-        f"\tTraining size:   {n_train}\n"
-        f"\tValidation size: {n_val}\n"
+        f"\tTraining size:   {len(train)}\n"
+        f"\tValidation size: {len(val)}\n"
         f"\tCheckpoints:     {save_cp}\n"
         f"\tDevice:          {device.type}\n"
         f"\tImages scaling:  {img_scale}")
