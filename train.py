@@ -113,6 +113,7 @@ def train_net(net,
                         best_model_dice_coeff = val_score
                         torch.save(net.state_dict(),
                             dir_checkpoint + f'CP_best.pth')
+                        print("Best network saved.")
 
                     writer.add_scalar("learning_rate",
                         optimizer.param_groups[0]["lr"],
@@ -180,7 +181,7 @@ if __name__ == "__main__":
     #   - For 2 classes, use n_classes=1
     #   - For N > 2 classes, use n_classes=N
     # net = UNet(n_channels=3, n_classes=1, bilinear=True)
-    net = smp.Unet("resnet18")
+    net = smp.FPN("resnet18")
     setattr(net, "n_classes", 1)
     setattr(net, "n_channels", 3)
     setattr(net, "bilinear", None)
