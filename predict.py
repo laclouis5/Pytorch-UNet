@@ -14,17 +14,20 @@ from utils.dataset import BasicDataset
 
 from utils.transforms import UNetDataAugmentations, UNetBaseTransform
 import segmentation_models_pytorch as smp
+from utils.transform import TestTimeImageTransform
 
-def predict_img(net,
-                full_img,
-                device,
-                scale_factor=1,
-                out_threshold=0.5):
+def predict_img(
+    net,
+    full_img,
+    device,
+    image_size=None,
+    out_threshold=0.5
+):
     net.eval()
+    transform = TestTimeImageTransform(image_size)
 
-    img = torch.from_numpy(BasicDataset.preprocess(full_img, scale_factor))
-
-    img = img.unsqueeze(0)
+    img = transform(full_img)  # FloatTensor (C, H, W)
+    img = img.unsqueeze(0)  # FloatTensor (B, C, H, W)
     img = img.to(device=device, dtype=torch.float32)
 
     with torch.no_grad():
@@ -73,6 +76,10 @@ def get_args():
     parser.add_argument('--scale', '-s', type=float,
                         help="Scale factor for the input images",
                         default=0.5)
+    parser.add_argument("--height", type=int,
+        help="Resize height of input image.", default=None)
+    parser.add_argument("--width", type=int,
+        help="Resize width of input image.", default=None)
 
     return parser.parse_args()
 
@@ -103,7 +110,13 @@ if __name__ == "__main__":
     in_files = args.input
     out_files = get_output_filenames(args)
 
-    net = UNet(n_channels=3, n_classes=1)
+    image_size = (args.height, args.width) if (args.height is not None and args.width is not None) else None
+
+    # net = UNet(n_channels=3, n_classes=1)
+    net = smp.FPN("resnet18")
+    setattr(net, "n_classes", 1)
+    setattr(net, "n_channels", 3)
+    setattr(net, "bilinear", None)
 
     logging.info("Loading model {}".format(args.model))
 
@@ -119,11 +132,12 @@ if __name__ == "__main__":
 
         img = Image.open(fn)
 
-        mask = predict_img(net=net,
-                           full_img=img,
-                           scale_factor=args.scale,
-                           out_threshold=args.mask_threshold,
-                           device=device)
+        mask = predict_img(
+            net=net,
+            full_img=img,
+            image_size=image_size,
+            out_threshold=args.mask_threshold,
+            device=device)
 
         if not args.no_save:
             out_fn = out_files[i]
