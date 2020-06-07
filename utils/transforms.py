@@ -48,11 +48,11 @@ class TestTimeImageTransform:
         img = image  # PIL image
 
         if self.size is not None:
-            img = F.resize(img, size)  # PIL image
+            img = F.resize(img, self.size)  # PIL image
 
         img = np.array(img)  # NP array (H, W, C)
 
-        if img.max() > 255:
+        if img.max() > 1:
             img = img / 255  # NP array (H, W, C)
 
         img = img.transpose((2, 0, 1))  # NP array (C, H, W)

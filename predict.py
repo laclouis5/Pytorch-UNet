@@ -14,7 +14,7 @@ from utils.dataset import BasicDataset
 
 from utils.transforms import UNetDataAugmentations, UNetBaseTransform
 import segmentation_models_pytorch as smp
-from utils.transform import TestTimeImageTransform
+from utils.transforms import TestTimeImageTransform
 
 def predict_img(
     net,
@@ -42,7 +42,7 @@ def predict_img(
 
         tf = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Resize(full_img.size[1]),
+            transforms.Resize((full_img.size[1], full_img.size[0])),
             transforms.ToTensor()
         ])
 
