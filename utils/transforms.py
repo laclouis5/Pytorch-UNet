@@ -34,6 +34,31 @@ class UNetBaseTransform:
     def __call__(self, image, mask):
         return self.transform(image, mask)
 
+class TestTimeImageTransform:
+    """
+    Args:
+        - size (int,  int): (height, width) of the output image.
+    Returns:
+        - image (FloatTensor): tensor representing the image.
+    """
+    def __init__(self, size=None):
+        self.size = size
+
+    def __call__(self, image):
+        img = image  # PIL image
+
+        if self.size is not None:
+            img = F.resize(img, size)  # PIL image
+
+        img = np.array(img)  # NP array (H, W, C)
+
+        if img.max() > 255:
+            img = img / 255  # NP array (H, W, C)
+
+        img = img.transpose((2, 0, 1))  # NP array (C, H, W)
+
+        return torch.from_numpy(img).type(torch.FloatTensor)  # FloatTensor (C, H, W)
+
 class Compose:
     def __init__(self, transforms):
         self.transforms = transforms
@@ -122,7 +147,9 @@ class RandomColorJitter:
 
 class ToTensor:
     def __call__(self, image, mask):
-        return torch.from_numpy(image).type(torch.FloatTensor), torch.from_numpy(mask).type(torch.FloatTensor)
+        return (
+            torch.from_numpy(image).type(torch.FloatTensor), torch.from_numpy(mask).type(torch.FloatTensor)
+        )
 
 class Crop:
     def __init__(self, top, left, height, width):
@@ -235,6 +262,7 @@ def main():
     for i in range(6):
         for j in range(1, 3, 2):
             (sub_img, sub_mask) = transform(image, mask)
+
             subplot_image = figure.add_subplot(grid[j, i], xticklabels=[], yticklabels=[])
             subplot_mask = figure.add_subplot(grid[j + 1, i], xticklabels=[], yticklabels=[])
 

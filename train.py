@@ -114,7 +114,9 @@ def train_net(net,
                         torch.save(net.state_dict(),
                             dir_checkpoint + f'CP_best.pth')
 
-                    writer.add_scalar("learning_rate", optimizer.param_groups[0]["lr"], global_step)
+                    writer.add_scalar("learning_rate",
+                        optimizer.param_groups[0]["lr"],
+                        global_step)
 
                     if net.n_classes > 1:
                         logging.info("Validation cross entropy: {}".format(val_score))
@@ -127,7 +129,9 @@ def train_net(net,
 
                     if net.n_classes == 1:
                         writer.add_images("masks/true", true_masks, global_step)
-                        writer.add_images("masks/pred", torch.sigmoid(masks_pred) > 0.5, global_step)
+                        writer.add_images("masks/pred",
+                            torch.sigmoid(masks_pred) > 0.5,
+                            global_step)
 
         # LRStep Scheduler
         scheduler.step()
@@ -147,17 +151,18 @@ def train_net(net,
 def get_args():
     parser = argparse.ArgumentParser(
         description="Train the UNet on images and target masks",         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-e", "--epochs", metavar="E", type=int, default=5,
-        help="Number of epochs", dest="epochs")
-    parser.add_argument("-b", "--batch-size", metavar="B", type=int, nargs="?", default=1,
-        help="Batch size", dest="batchsize")
-    parser.add_argument("-l", "--learning-rate", metavar="LR", type=float, nargs="?", default=0.01,
-        help="Learning rate", dest="lr")
-    parser.add_argument("-f", "--load", dest="load", type=str, default=False,
-        help="Load model from a .pth file")
-    parser.add_argument("-s", "--scale", dest="scale", type=float, default=0.5,
-        help="Downscaling factor of the images")
-    parser.add_argument("-v", "--validation", dest="val", type=float, default=10.0,
+    parser.add_argument("-e", "--epochs",
+        metavar="E", type=int, default=5, help="Number of epochs", dest="epochs")
+    parser.add_argument("-b", "--batch-size",
+        metavar="B", type=int, nargs="?", default=1, help="Batch size", dest="batchsize")
+    parser.add_argument("-l", "--learning-rate",
+        metavar="LR", type=float, nargs="?", default=0.01, help="Learning rate", dest="lr")
+    parser.add_argument("-f", "--load",
+        dest="load", type=str, default=False, help="Load model from a .pth file")
+    parser.add_argument("-s", "--scale",
+        dest="scale", type=float, default=0.5, help="Downscaling factor of the images")
+    parser.add_argument("-v", "--validation",
+        dest="val", type=float, default=10.0,
         help="Percent of the data that is used as validation (0-100)")
 
     return parser.parse_args()
@@ -180,14 +185,14 @@ if __name__ == "__main__":
     setattr(net, "n_channels", 3)
     setattr(net, "bilinear", None)
 
-    logging.info(f"Network:\n"
-                 f"\t{net.n_channels} input channels\n"
-                 f"\t{net.n_classes} output channels (classes)\n"
-                 f"\t{'Bilinear' if net.bilinear else 'Transposed conv'} upscaling")
+    logging.info(
+        f"Network:\n"
+        f"\t{net.n_channels} input channels\n"
+        f"\t{net.n_classes} output channels (classes)\n"
+        f"\t{'Bilinear' if net.bilinear else 'Transposed conv'} upscaling")
 
     if args.load:
-        net.load_state_dict(
-            torch.load(args.load, map_location=device))
+        net.load_state_dict(torch.load(args.load, map_location=device))
         logging.info(f"Model loaded from {args.load}")
 
     net.to(device)
