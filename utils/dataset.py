@@ -25,16 +25,16 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, index):
         id = self.ids[index]
-        image_file = glob(os.path.join(self.imgs_dir, id, ".*"))
-        mask_file = glob(os.path.join(self.masks_dir, id, ".*"))
+        image_file = glob(os.path.join(self.imgs_dir, id + ".*"))
+        mask_file = glob(os.path.join(self.masks_dir, id + ".*"))
 
         assert len(mask_file) == 1, \
             f"Either no mask or multiple masks found for the ID {id}: {mask_file}."
         assert len(image_file) == 1, \
             f"Either no image or multiple images found for the ID {id}: {image_file}."
 
-        image = Image.open(image_file)
-        mask = Image.open(mask_file)
+        image = Image.open(image_file[0])
+        mask = Image.open(mask_file[0])
 
         assert image.size == mask.size, \
             f"Image and mask {id} should be the same size, but are {image.size} and {mask.size}."

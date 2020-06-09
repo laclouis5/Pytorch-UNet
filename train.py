@@ -36,9 +36,9 @@ def train_net(net,
     # (train, val) = random_split(dataset, [n_train, n_val])
     # train.transform = UNetDataAugmentations(img_scale)
     train = CustomDataset("data/train/images/", "data/train/masks/",
-        transform=UNetDataAugmentations())
+        transform=UNetDataAugmentations(True))
     val = CustomDataset("data/val/images/", "data/val/masks/",
-        transform=UNetBaseTransform())
+        transform=UNetBaseTransform(True))
 
     train_loader = DataLoader(train,
         batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
@@ -49,7 +49,7 @@ def train_net(net,
     global_step = 0
 
     logging.info(
-        "Starting training:\n"
+        "Startinfn_g training:\n"
         f"\tEpochs:          {epochs}\n"
         f"\tBatch size:      {batch_size}\n"
         f"\tLearning rate:   {lr}\n"
@@ -71,7 +71,7 @@ def train_net(net,
         net.train()
 
         epoch_loss = 0
-        with tqdm(total=n_train, desc=f"Epoch {epoch + 1}/{epochs}", unit="img") as pbar:
+        with tqdm(total=len(train), desc=f"Epoch {epoch + 1}/{epochs}", unit="img") as pbar:
             for batch in train_loader:
                 imgs = batch["image"]
                 true_masks = batch["mask"]
