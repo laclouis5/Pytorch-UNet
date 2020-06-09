@@ -1,8 +1,10 @@
+import argparse
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
 from dice_loss import dice_coeff
+from utils.dataset import CustomDataset
 
 def eval_net(net, loader, device):
     """Evaluation without the densecrf with the dice coefficient"""
@@ -30,3 +32,21 @@ def eval_net(net, loader, device):
 
     net.train()
     return tot / n_val
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Evaluate segmentation network with Dice Coeff.")
+    parser.add_argument("--image_dir", "-i", type=str,
+        help="Image directory to perform validation.")
+    parser.add_argument("--mask_dir", "-t", type=str,
+        help="Mask directory to perform validation.")
+    parser.add_argument("--model", "-m", type=str,
+        help="Path to model weights (.pth).")
+    parser.add_argument("--height", type=int,
+        help="Resize height of input images.")
+    parser.add_argument("--width", type=int,
+        help="Resize width of inut images.")
+
+if __name__ == "__main__":
+    args = parse_args()
+    # TODO
