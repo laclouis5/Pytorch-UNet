@@ -9,9 +9,9 @@ import numbers
 # MARK: - Main classes
 
 class UNetDataAugmentations:
-    def __init__(self, scale=None):
+    def __init__(self, rescale_size=None):
         self.transform = Compose([
-            Resize((1920, 1280)) if scale else Identity(),
+            Resize((1920, 1280)) if rescale_size is not None else Identity(),
             RandomHorizontalFlip(),
             RandomColorJitter(),
             ToNumpyArray(),
@@ -23,9 +23,9 @@ class UNetDataAugmentations:
         return self.transform(image, mask)
 
 class UNetBaseTransform:
-    def __init__(self, scale=None):
+    def __init__(self, rescale_size=None):
         self.transform = Compose([
-            Resize((1920, 1280)) if scale else Identity(),
+            Resize((1920, 1280)) if rescale_size is not None else Identity(),
             ToNumpyArray(),
             Normalize(),
             ToTensor()
