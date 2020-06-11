@@ -5,6 +5,10 @@ from tqdm import tqdm
 
 from dice_loss import dice_coeff
 from utils.dataset import CustomDataset
+from utils.transforms import UNetDataAugmentations, UNetBaseTransform
+from torch.utils.data import DataLoader
+
+import segmentation_models_pytorch as smp
 
 def eval_net(net, loader, device):
     """Evaluation without the densecrf with the dice coefficient"""
@@ -47,6 +51,24 @@ def parse_args():
     parser.add_argument("--width", type=int,
         help="Resize width of inut images.")
 
+    return parser.parse_args()
+
 if __name__ == "__main__":
     args = parse_args()
-    # TODO
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    val = CustomDataset(args.image_dir, args.mask_dir,
+        transform=UNetBaseTransform((args.height, args.width)))
+    val_loader = DataLoader(val,
+        batch_size=1, shuffle=False, num_workers=8, pin_memory=True)
+
+    net = smp.Unet("resnet34")
+    setattr(net, "n_classes", 1)
+    setattr(net, "n_channels", 3)
+    setattr(net, "bilinear", None)
+
+    net.load_state_dict(torch.load(args.model, map_location=device))
+    net.to(device)
+
+    res = eval_net(net, loader=val_loader, device=device)
+    print(f"Dice coeff: {res}")
