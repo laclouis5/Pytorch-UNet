@@ -11,7 +11,7 @@ import numbers
 class UNetDataAugmentations:
     def __init__(self, rescale_size=None):
         self.transform = Compose([
-            Resize((1920, 1280)) if rescale_size is not None else Identity(),
+            Resize(rescale_size) if rescale_size is not None else Identity(),
             RandomHorizontalFlip(),
             RandomColorJitter(),
             ToNumpyArray(),
@@ -25,7 +25,7 @@ class UNetDataAugmentations:
 class UNetBaseTransform:
     def __init__(self, rescale_size=None):
         self.transform = Compose([
-            Resize((1920, 1280)) if rescale_size is not None else Identity(),
+            Resize(rescale_size) if rescale_size is not None else Identity(),
             ToNumpyArray(),
             Normalize(),
             ToTensor()
