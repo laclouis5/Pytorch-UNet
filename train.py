@@ -26,7 +26,6 @@ def train_net(net,
     epochs=5,
     batch_size=1,
     lr=0.001,
-    val_percent=0.1,
     save_cp=False,
     img_size=None
 ):
@@ -49,15 +48,15 @@ def train_net(net,
     global_step = 0
 
     logging.info(
-        "Startinfn_g training:\n"
-        f"\tEpochs:          {epochs}\n"
-        f"\tBatch size:      {batch_size}\n"
-        f"\tLearning rate:   {lr}\n"
-        f"\tTraining size:   {len(train)}\n"
-        f"\tValidation size: {len(val)}\n"
-        f"\tCheckpoints:     {save_cp}\n"
-        f"\tDevice:          {device.type}\n"
-        f"\tImages size:     {img_size}")
+        "Starting training:\n"
+        f"\tEpochs:             {epochs}\n"
+        f"\tBatch size:         {batch_size}\n"
+        f"\tLearning rate:      {lr}\n"
+        f"\tTraining size:      {len(train)}\n"
+        f"\tValidation size:    {len(val)}\n"
+        f"\tCheckpoints:        {save_cp}\n"
+        f"\tDevice:             {device.type}\n"
+        f"\tImages size (H, W): {img_size}")
 
     criterion = nn.CrossEntropyLoss() if net.n_classes > 1 else nn.BCEWithLogitsLoss()
     optimizer = optim.RMSprop(net.parameters(), lr=lr, weight_decay=1e-8, momentum=0.9)
@@ -146,8 +145,18 @@ def train_net(net,
 
 def get_args():
     parser = argparse.ArgumentParser(
-        description="Train the UNet on images and target masks",
+        description="Train segmentation model on images and target masks.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--model", "-m",
+        type=str,
+        choices=["unet", "fpn"],
+        default="unet",
+        help="The network model.")
+    parser.add_argument("--backbone", "-r",
+        type=str,
+        choices=["resnet18", "resnet34"],
+        default="resnet34",
+        help="Backbone to use. Should be the same as the one the model was trained on.")
     parser.add_argument("-e", "--epochs",
         metavar="E", type=int, default=5, help="Number of epochs", dest="epochs")
     parser.add_argument("-b", "--batch-size",
@@ -156,15 +165,10 @@ def get_args():
         metavar="LR", type=float, nargs="?", default=0.01, help="Learning rate", dest="lr")
     parser.add_argument("-f", "--load",
         dest="load", type=str, default=False, help="Load model from a .pth file")
-    # parser.add_argument("-s", "--scale",
-    #     dest="scale", type=float, default=0.5, help="Downscaling factor of the images")
     parser.add_argument("--width",
         dest="width", type=int, help="Resize width for input image.")
     parser.add_argument("--height",
         dest="height", type=int, help="Resize height for input image.")
-    parser.add_argument("-v", "--validation",
-        dest="val", type=float, default=10.0,
-        help="Percent of the data that is used as validation (0-100)")
 
     return parser.parse_args()
 
@@ -174,23 +178,23 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logging.info(f"Using device {device}")
 
-    # Change here to adapt to your data
-    # n_channels=3 for RGB images
-    # n_classes is the number of probabilities you want to get per pixel
-    #   - For 1 class and background, use n_classes=1
-    #   - For 2 classes, use n_classes=1
-    #   - For N > 2 classes, use n_classes=N
-    # net = UNet(n_channels=3, n_classes=1, bilinear=True)
-    net = smp.Unet("resnet34")
+    if args.model == "unet":
+        net = smp.Unet(args.backbone)
+    elif args.model == "fpn":
+        net = smp.FPN(args.backbone)
+    else:
+        logging.info("Not a valid model.")
+        raise SystemExit()
+
     setattr(net, "n_classes", 1)
     setattr(net, "n_channels", 3)
     setattr(net, "bilinear", None)
 
     logging.info(
         f"Network:\n"
+        f"Model: {args.model}, backbone: {args.backbone}"
         f"\t{net.n_channels} input channels\n"
-        f"\t{net.n_classes} output channels (classes)\n"
-        f"\t{'Bilinear' if net.bilinear else 'Transposed conv'} upscaling")
+        f"\t{net.n_classes} output channels (classes)\n")
 
     if args.load:
         net.load_state_dict(torch.load(args.load, map_location=device))
@@ -206,8 +210,7 @@ if __name__ == "__main__":
             batch_size=args.batchsize,
             lr=args.lr,
             device=device,
-            img_size=(args.height, args.width),
-            val_percent=args.val / 100)
+            img_size=(args.height, args.width))
     except KeyboardInterrupt:
         torch.save(net.state_dict(), "INTERRUPTED.pth")
         logging.info("Saved interrupt")

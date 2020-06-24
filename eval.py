@@ -40,15 +40,30 @@ def eval_net(net, loader, device):
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Evaluate segmentation network with Dice Coeff.")
-    parser.add_argument("--image_dir", "-i", type=str,
+    parser.add_argument("--image_dir", "-i",
+        type=str,
         help="Image directory to perform validation.")
-    parser.add_argument("--mask_dir", "-t", type=str,
+    parser.add_argument("--mask_dir", "-t",
+        type=str,
         help="Mask directory to perform validation.")
-    parser.add_argument("--model", "-m", type=str,
+    parser.add_argument("--model", "-m",
+        type=str,
+        choices=["unet", "fpn"],
+        default="unet",
+        help="The network model.")
+    parser.add_argument("--backbone", "-r",
+        type=str,
+        choices=["resnet18", "resnet34"],
+        default="resnet34",
+        help="Backbone to use. Should be the same as the one the model was trained on.")
+    parser.add_argument("--weights", "-s",
+        type=str,
         help="Path to model weights (.pth).")
-    parser.add_argument("--height", type=int,
+    parser.add_argument("--height",
+        type=int,
         help="Resize height of input images.")
-    parser.add_argument("--width", type=int,
+    parser.add_argument("--width",
+        type=int,
         help="Resize width of inut images.")
 
     return parser.parse_args()
@@ -62,12 +77,18 @@ if __name__ == "__main__":
     val_loader = DataLoader(val,
         batch_size=1, shuffle=False, num_workers=8, pin_memory=True)
 
-    net = smp.Unet("resnet34")
+    if args.model is "unet":
+        net = smp.Unet(args.backbone)
+    elif args.model is "fpn":
+        net = smp.FPN(args.backbone)
+    else:
+        raise SystemExit()
+
     setattr(net, "n_classes", 1)
     setattr(net, "n_channels", 3)
     setattr(net, "bilinear", None)
 
-    net.load_state_dict(torch.load(args.model, map_location=device))
+    net.load_state_dict(torch.load(args.weights, map_location=device))
     net.to(device)
 
     res = eval_net(net, loader=val_loader, device=device)

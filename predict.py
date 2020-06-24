@@ -51,38 +51,55 @@ def predict_img(
 
     return full_mask > out_threshold
 
-
 def get_args():
     parser = argparse.ArgumentParser(
         description='Predict masks from input images',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--model', '-m', default='MODEL.pth',
-                        metavar='FILE',
-                        help="Specify the file in which the model is stored")
-    parser.add_argument('--input', '-i', metavar='INPUT', nargs='+',
-                        help='filenames of input images', required=True)
-
-    parser.add_argument('--output', '-o', metavar='INPUT', nargs='+',
-                        help='Filenames of ouput images')
-    parser.add_argument('--viz', '-v', action='store_true',
-                        help="Visualize the images as they are processed",
-                        default=False)
-    parser.add_argument('--no-save', '-n', action='store_true',
-                        help="Do not save the output masks",
-                        default=False)
-    parser.add_argument('--mask-threshold', '-t', type=float,
-                        help="Minimum probability value to consider a mask pixel white",
-                        default=0.5)
-    parser.add_argument('--scale', '-s', type=float,
-                        help="Scale factor for the input images",
-                        default=0.5)
-    parser.add_argument("--height", type=int,
-        help="Resize height of input image.", default=None)
-    parser.add_argument("--width", type=int,
-        help="Resize width of input image.", default=None)
+    parser.add_argument('--weights', '-s',
+        default='MODEL.pth',
+        metavar='FILE',
+        help="Specify the file in which the weights are stored.")
+    parser.add_argument('--input', '-i',
+        metavar='INPUT',
+        nargs='+',
+        help='filenames of input images',
+        required=True)
+    parser.add_argument("--model", "-m",
+        type=str,
+        choices=["unet", "fpn"],
+        default="unet",
+        help="The network model.")
+    parser.add_argument("--backbone", "-r",
+        type=str,
+        choices=["resnet18", "resnet34"],
+        default="resnet34",
+        help="Backbone to use. Should be the same as the one the model was trained on.")
+    parser.add_argument('--output', '-o',
+        metavar='INPUT',
+        nargs='+',
+        help='Filenames of ouput images')
+    parser.add_argument('--viz', '-v',
+        action='store_true',
+        help="Visualize the images as they are processed",
+        default=False)
+    parser.add_argument('--no-save', '-n',
+        action='store_true',
+        help="Do not save the output masks",
+        default=False)
+    parser.add_argument('--mask-threshold', '-t',
+        type=float,
+        help="Minimum probability value to consider a mask pixel white",
+        default=0.5)
+    parser.add_argument("--height",
+        type=int,
+        help="Resize height of input image.",
+        default=None)
+    parser.add_argument("--width",
+        type=int,
+        help="Resize width of input image.",
+        default=None)
 
     return parser.parse_args()
-
 
 def get_output_filenames(args):
     in_files = args.input
@@ -100,10 +117,8 @@ def get_output_filenames(args):
 
     return out_files
 
-
 def mask_to_image(mask):
     return Image.fromarray((mask * 255).astype(np.uint8))
-
 
 if __name__ == "__main__":
     args = get_args()
@@ -112,18 +127,23 @@ if __name__ == "__main__":
 
     image_size = (args.height, args.width) if (args.height is not None and args.width is not None) else None
 
-    # net = UNet(n_channels=3, n_classes=1)
-    net = smp.FPN("resnet18")
+    if args.model is "unet":
+        net = smp.Unet(args.backbone)
+    elif args.model is "fpn":
+        net = smp.FPN(args.backbone)
+    else:
+        raise SystemExit()
+
     setattr(net, "n_classes", 1)
     setattr(net, "n_channels", 3)
     setattr(net, "bilinear", None)
 
-    logging.info("Loading model {}".format(args.model))
+    logging.info("Loading weights {}".format(args.weights))
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info(f'Using device {device}')
     net.to(device=device)
-    net.load_state_dict(torch.load(args.model, map_location=device))
+    net.load_state_dict(torch.load(args.weights, map_location=device))
 
     logging.info("Model loaded !")
 
