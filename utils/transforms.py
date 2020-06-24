@@ -107,8 +107,8 @@ class Resize:
             self.width = int(size)
             self.height = int(size)
         else:
-            self.width = int(size[0])
-            self.height = int(size[1])
+            self.height = int(size[0])
+            self.width = int(size[1])
 
         self.img_transform = transforms.Resize((self.height, self.width))
         self.mask_transform = transforms.Resize((self.height, self.width),
@@ -239,14 +239,16 @@ def crop(image, mask, top, left, height, width):
 def main():
     import matplotlib.pyplot as plt
 
-    image = PIL.Image.open("../data/imgs/grape29.png")
-    mask = PIL.Image.open("../data/masks/grape29.png")
+    image = PIL.Image.open("../data/val/im_02018.jpg")
+    mask = PIL.Image.open("../data/val/im_02018.png")
 
     transform = Compose([
         RandomHorizontalFlip(),
         # RandomCrop(size=(612, 412), pos_ratio=0.5),
         Rescale(0.01) if False else Identity(),
         RandomColorJitter(),
+        ToNumpyArray(),
+        Normalize(),
         ToTensor()
     ])
 
