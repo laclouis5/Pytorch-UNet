@@ -11,6 +11,7 @@ from torchvision import transforms
 from unet import UNet
 from utils.data_vis import plot_img_and_mask
 from utils.dataset import BasicDataset
+from utils.arg_parsers import get_predict_args
 
 from utils.transforms import UNetDataAugmentations, UNetBaseTransform
 import segmentation_models_pytorch as smp
@@ -51,56 +52,6 @@ def predict_img(
 
     return full_mask > out_threshold
 
-def get_args():
-    parser = argparse.ArgumentParser(
-        description='Predict masks from input images',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--weights', '-s',
-        default='MODEL.pth',
-        metavar='FILE',
-        help="Specify the file in which the weights are stored.")
-    parser.add_argument('--input', '-i',
-        metavar='INPUT',
-        nargs='+',
-        help='filenames of input images',
-        required=True)
-    parser.add_argument("--model", "-m",
-        type=str,
-        choices=["unet", "fpn"],
-        default="unet",
-        help="The network model.")
-    parser.add_argument("--backbone", "-r",
-        type=str,
-        choices=["resnet18", "resnet34"],
-        default="resnet34",
-        help="Backbone to use. Should be the same as the one the model was trained on.")
-    parser.add_argument('--output', '-o',
-        metavar='INPUT',
-        nargs='+',
-        help='Filenames of ouput images')
-    parser.add_argument('--viz', '-v',
-        action='store_true',
-        help="Visualize the images as they are processed",
-        default=False)
-    parser.add_argument('--no-save', '-n',
-        action='store_true',
-        help="Do not save the output masks",
-        default=False)
-    parser.add_argument('--mask-threshold', '-t',
-        type=float,
-        help="Minimum probability value to consider a mask pixel white",
-        default=0.5)
-    parser.add_argument("--height",
-        type=int,
-        help="Resize height of input image.",
-        default=None)
-    parser.add_argument("--width",
-        type=int,
-        help="Resize width of input image.",
-        default=None)
-
-    return parser.parse_args()
-
 def get_output_filenames(args):
     in_files = args.input
     out_files = []
@@ -121,7 +72,7 @@ def mask_to_image(mask):
     return Image.fromarray((mask * 255).astype(np.uint8))
 
 if __name__ == "__main__":
-    args = get_args()
+    args = get_predict_args()
     in_files = args.input
     out_files = get_output_filenames(args)
 

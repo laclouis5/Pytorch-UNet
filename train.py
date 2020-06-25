@@ -14,6 +14,7 @@ from unet import UNet
 
 from torch.utils.tensorboard import SummaryWriter
 from utils.dataset import BasicDataset, CustomDataset
+from utils.arg_parsers import get_train_args
 from torch.utils.data import DataLoader, random_split
 
 from utils.transforms import UNetDataAugmentations, UNetBaseTransform
@@ -105,7 +106,7 @@ def train_net(net,
                     if val_score > best_model_dice_coeff:
                         best_model_dice_coeff = val_score
                         torch.save(net.state_dict(),
-                            dir_checkpoint + f'CP_best.pth')
+                            dir_checkpoint + f"CP_best.pth")
 
                     writer.add_scalar("learning_rate",
                         optimizer.param_groups[0]["lr"],
@@ -135,7 +136,9 @@ def train_net(net,
             try:
                 os.mkdir(dir_checkpoint)
                 logging.info("Created checkpoint directory")
-            except OSError: pass
+            except OSError:
+                logging.error("Can't create save directory")
+                pass
 
             torch.save(net.state_dict(),
                 dir_checkpoint + f"CP_epoch{epoch + 1}.pth")
@@ -143,38 +146,9 @@ def train_net(net,
 
     writer.close()
 
-def get_args():
-    parser = argparse.ArgumentParser(
-        description="Train segmentation model on images and target masks.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--model", "-m",
-        type=str,
-        choices=["unet", "fpn"],
-        default="unet",
-        help="The network model.")
-    parser.add_argument("--backbone", "-r",
-        type=str,
-        choices=["resnet18", "resnet34"],
-        default="resnet34",
-        help="Backbone to use. Should be the same as the one the model was trained on.")
-    parser.add_argument("-e", "--epochs",
-        metavar="E", type=int, default=5, help="Number of epochs", dest="epochs")
-    parser.add_argument("-b", "--batch-size",
-        metavar="B", type=int, nargs="?", default=1, help="Batch size", dest="batchsize")
-    parser.add_argument("-l", "--learning-rate",
-        metavar="LR", type=float, nargs="?", default=0.01, help="Learning rate", dest="lr")
-    parser.add_argument("-f", "--load",
-        dest="load", type=str, default=False, help="Load model from a .pth file")
-    parser.add_argument("--width",
-        dest="width", type=int, help="Resize width for input image.")
-    parser.add_argument("--height",
-        dest="height", type=int, help="Resize height for input image.")
-
-    return parser.parse_args()
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-    args = get_args()
+    args = get_train_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logging.info(f"Using device {device}")
 
