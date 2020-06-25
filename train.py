@@ -183,7 +183,7 @@ if __name__ == "__main__":
     elif args.model == "fpn":
         net = smp.FPN(args.backbone)
     else:
-        logging.info("Not a valid model.")
+        logging.info("Not a valid model")
         raise SystemExit()
 
     setattr(net, "n_classes", 1)

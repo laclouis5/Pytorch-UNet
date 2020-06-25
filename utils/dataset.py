@@ -18,7 +18,7 @@ class CustomDataset(Dataset):
         self.ids = [splitext(file)[0] for file in listdir(imgs_dir) if not file.startswith(".")]
         self.transform = transform
 
-        logging.info(f"Creating dataset with {len(self.ids)} items.")
+        logging.info(f"Creating dataset with {len(self.ids)} items")
 
     def __len__(self):
         return len(self.ids)

@@ -2,6 +2,7 @@ import argparse
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
+import logging
 
 from dice_loss import dice_coeff
 from utils.dataset import CustomDataset
@@ -42,9 +43,11 @@ def parse_args():
         description="Evaluate segmentation network with Dice Coeff.")
     parser.add_argument("--image_dir", "-i",
         type=str,
+        default="data/val/images/",
         help="Image directory to perform validation.")
     parser.add_argument("--mask_dir", "-t",
         type=str,
+        default="data/val/masks/",
         help="Mask directory to perform validation.")
     parser.add_argument("--model", "-m",
         type=str,
@@ -69,17 +72,22 @@ def parse_args():
     return parser.parse_args()
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
     args = parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    logging.info(f"Using device {device}")
+    logging.info(f"Images size (H, W): {(args.height, args.width)}")
 
     val = CustomDataset(args.image_dir, args.mask_dir,
         transform=UNetBaseTransform((args.height, args.width)))
     val_loader = DataLoader(val,
         batch_size=1, shuffle=False, num_workers=8, pin_memory=True)
 
-    if args.model is "unet":
+    if args.model == "unet":
         net = smp.Unet(args.backbone)
-    elif args.model is "fpn":
+    elif args.model == "fpn":
         net = smp.FPN(args.backbone)
     else:
         raise SystemExit()
@@ -88,8 +96,15 @@ if __name__ == "__main__":
     setattr(net, "n_channels", 3)
     setattr(net, "bilinear", None)
 
+    logging.info(
+        f"Network:\n"
+        f"  Model: {args.model}, backbone: {args.backbone}\n"
+        f"  {net.n_channels} input channels\n"
+        f"  {net.n_classes} output channels (classes)"
+    )
+
     net.load_state_dict(torch.load(args.weights, map_location=device))
     net.to(device)
 
     res = eval_net(net, loader=val_loader, device=device)
-    print(f"Dice coeff: {res}")
+    logging.info("Dice coeff: {:.2%}".format(res))

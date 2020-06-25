@@ -125,11 +125,17 @@ if __name__ == "__main__":
     in_files = args.input
     out_files = get_output_filenames(args)
 
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    logging.info(f'Using device {device}')
+    logging.info(f"Images size (H, W): {(args.height, args.width)}")
+
     image_size = (args.height, args.width) if (args.height is not None and args.width is not None) else None
 
-    if args.model is "unet":
+    if args.model == "unet":
         net = smp.Unet(args.backbone)
-    elif args.model is "fpn":
+    elif args.model == "fpn":
         net = smp.FPN(args.backbone)
     else:
         raise SystemExit()
@@ -138,17 +144,22 @@ if __name__ == "__main__":
     setattr(net, "n_channels", 3)
     setattr(net, "bilinear", None)
 
+    logging.info(
+        f"Network:\n"
+        f"  Model: {args.model}, backbone: {args.backbone}\n"
+        f"  {net.n_channels} input channels\n"
+        f"  {net.n_classes} output channels (classes)"
+    )
+
     logging.info("Loading weights {}".format(args.weights))
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    logging.info(f'Using device {device}')
     net.to(device=device)
     net.load_state_dict(torch.load(args.weights, map_location=device))
 
     logging.info("Model loaded !")
 
     for i, fn in enumerate(in_files):
-        logging.info("\nPredicting image {} ...".format(fn))
+        logging.info("Predicting image {}...".format(fn))
 
         img = Image.open(fn)
 
@@ -167,5 +178,5 @@ if __name__ == "__main__":
             logging.info("Mask saved to {}".format(out_files[i]))
 
         if args.viz:
-            logging.info("Visualizing results for image {}, close to continue ...".format(fn))
+            logging.info("Visualizing results for image {}, close to continue...".format(fn))
             plot_img_and_mask(img, mask)
