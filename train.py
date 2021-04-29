@@ -20,6 +20,7 @@ from torch.utils.data import DataLoader, random_split
 from utils.transforms import UNetDataAugmentations, UNetBaseTransform
 import segmentation_models_pytorch as smp
 
+
 dir_checkpoint = "checkpoints/"
 
 def train_net(net,
@@ -70,8 +71,8 @@ def train_net(net,
     for epoch in range(epochs):
         net.train()
 
-        epoch_loss = 0
         with tqdm(total=len(train), desc=f"Epoch {epoch + 1}/{epochs}", unit="img") as pbar:
+            epoch_loss = 0
             for batch in train_loader:
                 imgs = batch["image"]
                 true_masks = batch["mask"]
@@ -116,7 +117,7 @@ def train_net(net,
                         logging.info("Validation cross entropy: {}".format(val_score))
                         writer.add_scalar("Loss/test", val_score, global_step)
                     else:
-                        logging.info("Validation Dice Coeff: {}".format(val_score))
+                        logging.info("Validation Dice Coeff: {:.2%}".format(val_score))
                         writer.add_scalar("Dice/test", val_score, global_step)
 
                     writer.add_images("images", imgs, global_step)
@@ -138,8 +139,6 @@ def train_net(net,
                 logging.info("Created checkpoint directory")
             except OSError:
                 logging.error("Can't create save directory")
-                pass
-
             torch.save(net.state_dict(),
                 dir_checkpoint + f"CP_epoch{epoch + 1}.pth")
             logging.info(f"Checkpoint {epoch + 1} saved !")
@@ -166,9 +165,9 @@ if __name__ == "__main__":
 
     logging.info(
         f"Network:\n"
-        f"Model: {args.model}, backbone: {args.backbone}"
-        f"\t{net.n_channels} input channels\n"
-        f"\t{net.n_classes} output channels (classes)\n")
+        f"  Model: {args.model}, backbone: {args.backbone}\n"
+        f"  {net.n_channels} input channels\n"
+        f"  {net.n_classes} output channels (classes)")
 
     if args.load:
         net.load_state_dict(torch.load(args.load, map_location=device))

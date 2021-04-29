@@ -40,6 +40,8 @@ def eval_net(net, loader, device):
     return tot / n_val
 
 if __name__ == "__main__":
+    # Maybe evaluation should be conducted on the entire image by resizing the output predictions
+    # Like in predict.py.
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
     args = get_eval_args()
